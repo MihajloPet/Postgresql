@@ -1,0 +1,25 @@
+-- Function to retrieve the maximum timestamp from all tables in a schema
+CREATE OR REPLACE FUNCTION get_max_timestamps()
+  RETURNS TABLE (tbl_name TEXT, max_timestamp TIMESTAMP)
+AS $$
+DECLARE
+  rec RECORD;
+BEGIN
+  FOR rec IN (
+    -- Select the table names from the information_schema.tables view
+    SELECT table_name
+    FROM information_schema.tables
+    WHERE table_schema = 'public' -- Replace with your actual schema name, e.g., 'public'
+      AND table_type = 'BASE TABLE'
+  )
+  LOOP
+    -- Dynamically execute a query to get the maximum timestamp from each table
+    EXECUTE format('SELECT %L AS tbl_name, MAX(created_at) AS max_timestamp FROM %I.%I', rec.table_name, 'public', rec.table_name) INTO tbl_name, max_timestamp;
+    RETURN NEXT; -- Return the current table's name and maximum timestamp
+  END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- Code example
+SELECT * FROM get_max_timestamps();
